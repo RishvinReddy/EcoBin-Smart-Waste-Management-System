@@ -40,3 +40,4 @@ htmlcov/
 # Build artifacts
 dist/
 build/
+*.mp4
