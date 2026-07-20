@@ -1,0 +1,18 @@
+{
+    "AI": {
+        "distance_km": 165.06,
+        "fuel_liters": 49.52,
+        "overflow_bins": 2,
+        "duration_hours": 11.0,
+        "truck_utilization_pct": 67.1,
+        "bins_collected": 33
+    },
+    "Fixed": {
+        "distance_km": 154.16,
+        "fuel_liters": 46.25,
+        "overflow_bins": 12,
+        "duration_hours": 10.64,
+        "truck_utilization_pct": 39.3,
+        "bins_collected": 33
+    }
+}

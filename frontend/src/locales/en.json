@@ -1,0 +1,16 @@
+{
+  "welcome": "Welcome",
+  "login": "Login",
+  "scanQR": "Scan QR to Login",
+  "dashboard": "Dashboard",
+  "driverDashboard": "Driver Dashboard",
+  "maintenanceDashboard": "Maintenance Dashboard",
+  "scanBin": "Scan Bin",
+  "scanTruck": "Scan Truck",
+  "startShift": "Start Shift",
+  "reportIssue": "Report Issue",
+  "language": "Language",
+  "logout": "Logout",
+  "collectionRecorded": "Collection Recorded",
+  "invalidQR": "Invalid QR Code"
+}

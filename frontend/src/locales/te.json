@@ -1,0 +1,16 @@
+{
+  "welcome": "స్వాగతం",
+  "login": "లాగిన్",
+  "scanQR": "లాగిన్ చేయడానికి QR స్కాన్ చేయండి",
+  "dashboard": "డ్యాష్‌బోర్డ్",
+  "driverDashboard": "డ్రైవర్ డ్యాష్‌బోర్డ్",
+  "maintenanceDashboard": "నిర్వహణ డ్యాష్‌బోర్డ్",
+  "scanBin": "బిన్ స్కాన్ చేయండి",
+  "scanTruck": "ట్రక్ స్కాన్ చేయండి",
+  "startShift": "షిఫ్ట్ ప్రారంభించండి",
+  "reportIssue": "సమస్యను నివేదించండి",
+  "language": "భాష",
+  "logout": "లాగ్అవుట్",
+  "collectionRecorded": "సేకరణ రికార్డ్ చేయబడింది",
+  "invalidQR": "చెల్లని QR కోడ్"
+}

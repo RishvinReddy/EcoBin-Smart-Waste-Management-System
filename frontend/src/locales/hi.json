@@ -1,0 +1,16 @@
+{
+  "welcome": "स्वागत है",
+  "login": "लॉग इन करें",
+  "scanQR": "लॉग इन करने के लिए QR स्कैन करें",
+  "dashboard": "डैशबोर्ड",
+  "driverDashboard": "ड्राइवर डैशबोर्ड",
+  "maintenanceDashboard": "रखरखाव डैशबोर्ड",
+  "scanBin": "बिन स्कैन करें",
+  "scanTruck": "ट्रक स्कैन करें",
+  "startShift": "शिफ्ट शुरू करें",
+  "reportIssue": "समस्या की रिपोर्ट करें",
+  "language": "भाषा",
+  "logout": "लॉग आउट",
+  "collectionRecorded": "संग्रह दर्ज किया गया",
+  "invalidQR": "अमान्य QR कोड"
+}
