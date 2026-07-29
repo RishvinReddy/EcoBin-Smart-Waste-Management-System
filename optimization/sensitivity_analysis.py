@@ -23,6 +23,7 @@ def get_area_priority(area_type):
 
 def run_sensitivity(env='development'):
     config = {
+        'smoke': {'days': 2, 'seeds': 1},
         'development': {'days': 7, 'seeds': 2},
         'validation': {'days': 30, 'seeds': 5},
         'publication': {'days': 90, 'seeds': 10}

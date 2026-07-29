@@ -220,23 +220,27 @@ def main():
         db.commit()
 
         print(f"  [OK] Optimized routes for {len(results.get('routes', {}))} trucks.")
-        print(f"  [OK] Total distance: {results.get('total_distance_km', 0)} km")
-        print()
 
         # ── 6. Residual Analysis ─────────────────────────────
-        print("[6/7] Running Residual Analysis...")
+        print("[6/8] Running Residual Analysis...")
         import ml.forecasting.residual_analysis as res_analysis
         res_analysis.analyze_residuals()
         print()
         
         # ── 7. Experiment Runner ─────────────────────────────
-        print("[7/7] Running Experiment Runner (Simulation vs Baselines)...")
+        print("[7/8] Running Experiment Runner (Simulation vs Baselines)...")
         import optimization.experiment_runner as exp_runner
-        exp_runner.run_experiments('development')
+        exp_runner.run_experiments('smoke')
+        print()
+        
+        # ── 8. Sensitivity Analysis ──────────────────────────
+        print("[8/8] Running Sensitivity & Ablation Analysis...")
+        import optimization.sensitivity_analysis as sens
+        sens.run_sensitivity('smoke')
         print()
         
         # ── Summary ──────────────────────────────────────────
-        print("🎉 Full AI Routing Pipeline Completed Successfully!")
+        print("🎉 Full AI Routing Pipeline & Experiments Completed Successfully!")
         print("To start the backend server:")
         print("  cd backend && uvicorn main:app --reload")
 
@@ -244,16 +248,6 @@ def main():
         print("=" * 65)
         print("  PIPELINE COMPLETE — EVALUATION SUMMARY")
         print("=" * 65)
-        print(f"{'Metric':<28} {'Fixed Schedule':<20} {'AI Optimized'}")
-        print(f"  {'-'*60}")
-        print(f"  {'Distance Traveled':<26} {str(fx['distance_km']) + ' km':<20} {ai['distance_km']} km")
-        print(f"  {'Fuel Consumed':<26} {str(fx['fuel_liters']) + ' L':<20} {ai['fuel_liters']} L")
-        print(f"  {'Overflow Bins':<26} {str(fx['overflow_bins']):<20} {ai['overflow_bins']}")
-        print(f"  {'Duration':<26} {str(fx['duration_hours']) + ' hrs':<20} {ai['duration_hours']} hrs")
-        print(f"  {'Truck Utilization':<26} {str(fx['truck_utilization_pct']) + '%':<20} {ai['truck_utilization_pct']}%")
-        print(f"  {'-'*60}")
-        print(f"  Distance Saved:  {dist_save:.1f} km  |  Fuel Saved: {fuel_save:.1f} L  |  CO2 Offset: {co2_save} kg")
-        print()
         print("  -> Start server:  python -m uvicorn backend.main:app --reload --port 8000")
         print("  -> Dashboard:     http://localhost:5173")
         print("  -> Swagger Docs:  http://127.0.0.1:8000/docs")
