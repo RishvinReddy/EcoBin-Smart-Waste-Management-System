@@ -28,7 +28,7 @@ EcoBin is an AI-powered municipal waste management system that simulates IoT bin
 - 🧠 **AI-Powered Predictions**: Uses XGBoost and Ridge Regression to forecast bin fill levels with high accuracy.
 - 🚚 **Dynamic Route Optimization**: Utilizes Google OR-Tools to solve the Capacitated Vehicle Routing Problem (CVRP), minimizing travel distance and fuel consumption.
 - 📊 **Real-time Analytics Dashboard**: A glassmorphic, dark-themed React + Leaflet dashboard for monitoring bin status and routes.
-- 🏭 **Synthetic Data Generation**: Built-in simulator for generating robust, realistic IoT sensor data (4.38M+ records for 500 bins).
+- 🏭 **Synthetic Data Generation**: Built-in simulator for generating robust, realistic IoT sensor data (876,000 records for 100 bins).
 - 🐳 **Dockerized Deployment**: Fully containerized for easy setup and teardown.
 
 ---
@@ -37,7 +37,7 @@ EcoBin is an AI-powered municipal waste management system that simulates IoT bin
 
 ```mermaid
 graph TD
-    A[Synthetic Data Generator] -->|4.38M records| B[(PostgreSQL / SQLite Database)]
+    A[Synthetic Data Generator] -->|876,000 records| B[(PostgreSQL / SQLite Database)]
     B --> C[Feature Engineering Module]
     C --> D[ML Forecasting Models XGBoost/Ridge]
     D -->|Forecast & Overflow Probabilities| E[Priority Engine]
@@ -117,7 +117,7 @@ Explore the comprehensive visual walkthrough of the EcoBin web dashboard, predic
 </table>
 
 ### 3. 🧠 AI Fill-Level Forecasting & Predictive Analytics
-*XGBoost and Ridge Regression machine learning models analyzing 4.38M+ historical sensor records to predict 24-hour waste generation and compute overflow risk probabilities with normal distribution confidence bounds.*
+*XGBoost and Ridge Regression machine learning models analyzing 876,000 historical sensor records to predict 24-hour waste generation and compute overflow risk probabilities with normal distribution confidence bounds.*
 
 <table>
   <tr>
@@ -149,7 +149,7 @@ Explore the comprehensive visual walkthrough of the EcoBin web dashboard, predic
 </table>
 
 ### 4. 📊 Real-Time Analytics & Sustainability Impact
-*Comparative environmental reporting contrasting AI-optimized routing against rigid fixed schedules, demonstrating a 33% reduction in travel distance and carbon emissions alongside an 80% decrease in bin overflows.*
+*Comparative environmental reporting contrasting AI-optimized routing against rigid fixed schedules, evaluating differences in travel distance, carbon emissions, and bin overflow prevention.*
 
 <table>
   <tr>
@@ -286,7 +286,7 @@ Follow these steps to set up the project locally for development and testing.
    ```
 
 4. **Run the Initialization and Data Pipeline:**
-   This command creates the database schema, generates 365 days of hourly records (~4.38M records), trains ML models, runs predictive forecasting for tomorrow, and computes optimized routes.
+   This command creates the database schema, generates 365 days of hourly records (~876,000 records), trains ML models, runs predictive forecasting for tomorrow, and computes optimized routes.
    ```bash
    python run_pipeline.py
    ```
@@ -333,21 +333,23 @@ docker-compose up --build -d
 
 ## 📈 System Evaluation Comparison
 
-Our pipeline automatically computes a comparison against a **Fixed Schedule** baseline (where a rigid 1/3 rotation of bins are collected daily).
+Our pipeline evaluates collection strategies using a robust experimental runner that simulates 90 days across 10 random seeds on identical ground-truth scenarios. It compares four key strategies:
 
-| Metric | Fixed Schedule | AI System (Optimized) | Improvement |
-| :--- | :--- | :--- | :--- |
-| **Distance Traveled** | ~142 km | **~94 km** | 🟩 **33% reduction** |
-| **Fuel Consumed** | ~42.8 L | **~28.3 L** | 🟩 **33% reduction** |
-| **Overflowing Bins** | ~11 bins | **~2 bins** | 🟩 **80% prevention** |
-| **Truck Capacity Util.** | ~42% | **~82%** | 🟩 **+40% efficiency** |
+1. **Fixed Schedule**: Collects bins based on a deterministic three-day rotation schedule.
+2. **Reactive Threshold**: Collects bins that currently exceed 80% capacity.
+3. **Predictive CVRP**: Collects bins predicted to exceed 80% capacity in the next 24 hours.
+4. **Full EcoBin**: A hybrid policy incorporating forecasted fill level, overflow probability, and area priority.
+
+*Note: Results and baseline comparisons will be populated dynamically via the experimental runner to ensure reproducible, empirically sound claims.*
 
 ### 🔬 Optimization Logic
 1. **Machine Learning Model**: XGBoost predicts tomorrow's fill level. An overflow probability is computed by mapping the predictions against the model's standard error (RMSE) using the normal distribution's cumulative density function:
    $$ P(\text{Fill} \ge 80\%) = 1 - \Phi\left(\frac{80 - \hat{y}}{\text{RMSE}}\right) $$
+   *(Note: The forecasting evaluation incorporates Ridge Regression and Persistence as baselines, and models are exposed to available temporal features excluding future collections).*
 2. **Priority Score**: A combined score is calculated:
    $$ \text{Priority} = (\text{Predicted Fill} \times 0.6) + (\text{Overflow Prob} \times 0.2) + (\text{Area Priority} \times 0.2) $$
-3. **Google OR-Tools**: Solves a Capacitated Vehicle Routing Problem (CVRP) to route trucks only through bins exceeding threshold priority constraints, minimizing distance while keeping total volume under vehicle capacities (5000L).
+3. **Google OR-Tools**: Solves a Capacitated Vehicle Routing Problem (CVRP) to route trucks only through bins exceeding threshold priority constraints, minimizing distance while keeping total volume under vehicle capacities (5000L). 
+   *(Note: Pairwise geodesic distances were scaled by a 1.3 routing factor to approximate road-network travel distance).*
 
 ---
 

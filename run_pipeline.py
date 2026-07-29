@@ -165,8 +165,9 @@ def main():
                 df_latest['hour'] = df_latest['timestamp'].dt.hour
                 df_latest['day_of_week'] = df_latest['timestamp'].dt.dayofweek
                 df_latest['month'] = df_latest['timestamp'].dt.month
+                from ml.preprocessing.calendar_features import is_public_holiday
                 df_latest['is_weekend'] = (df_latest['day_of_week'] >= 5).astype(int)
-                df_latest['holiday'] = df_latest['is_weekend']
+                df_latest['holiday'] = df_latest['timestamp'].apply(is_public_holiday)
                 for col in area_cols:
                     area_name = col.replace("area_", "")
                     df_latest[col] = (df_latest['area_type'] == area_name).astype(int)
@@ -204,8 +205,7 @@ def main():
         depot = {"latitude": 17.3850, "longitude": 78.4867}
 
         results = solve_cvrp(depot, bins_to_collect, truck_fleet)
-        all_bins = [{"bin_id": b.bin_id, "latitude": b.latitude, "longitude": b.longitude, "capacity": b.capacity} for b in db.query(Bin).all()]
-        fixed_metrics = simulate_fixed_schedule(depot, all_bins, truck_fleet)
+        results = solve_cvrp(depot, bins_to_collect, truck_fleet)
 
         db.query(OptimizedRoute).delete()
         today = datetime.date.today()
@@ -219,35 +219,27 @@ def main():
             ))
         db.commit()
 
-        comparison = {
-            "AI": {
-                "distance_km": results.get("total_distance_km", 0),
-                "fuel_liters": results.get("total_fuel_liters", 0),
-                "overflow_bins": 2, "duration_hours": results.get("total_duration_hours", 0),
-                "truck_utilization_pct": results.get("truck_utilization_pct", 0),
-                "bins_collected": len(bins_to_collect)
-            },
-            "Fixed": {
-                "distance_km": fixed_metrics["total_distance_km"],
-                "fuel_liters": fixed_metrics["total_fuel_liters"],
-                "overflow_bins": 12, "duration_hours": fixed_metrics["total_duration_hours"],
-                "truck_utilization_pct": fixed_metrics["truck_utilization_pct"],
-                "bins_collected": len(all_bins) // 3
-            }
-        }
+        print(f"  [OK] Optimized routes for {len(results.get('routes', {}))} trucks.")
+        print(f"  [OK] Total distance: {results.get('total_distance_km', 0)} km")
+        print()
 
-        metrics_file = os.path.join(os.path.dirname(__file__), "database", "optimized_metrics.json")
-        with open(metrics_file, "w") as f:
-            json.dump(comparison, f, indent=4)
-
+        # ── 6. Residual Analysis ─────────────────────────────
+        print("[6/7] Running Residual Analysis...")
+        import ml.forecasting.residual_analysis as res_analysis
+        res_analysis.analyze_residuals()
+        print()
+        
+        # ── 7. Experiment Runner ─────────────────────────────
+        print("[7/7] Running Experiment Runner (Simulation vs Baselines)...")
+        import optimization.experiment_runner as exp_runner
+        exp_runner.run_experiments('development')
+        print()
+        
         # ── Summary ──────────────────────────────────────────
-        ai = comparison["AI"]
-        fx = comparison["Fixed"]
-        dist_save = max(0, fx["distance_km"] - ai["distance_km"])
-        fuel_save = max(0, fx["fuel_liters"] - ai["fuel_liters"])
-        co2_save = round(fuel_save * 2.68, 1)
+        print("🎉 Full AI Routing Pipeline Completed Successfully!")
+        print("To start the backend server:")
+        print("  cd backend && uvicorn main:app --reload")
 
-        print(f"  [OK] Optimized {len(bins_to_collect)} bins across {len(results.get('routes', {}))} truck routes")
         print()
         print("=" * 65)
         print("  PIPELINE COMPLETE — EVALUATION SUMMARY")

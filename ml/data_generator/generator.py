@@ -195,14 +195,7 @@ AREA_PARAMS = {
     "Industrial":       {"base_fill_rate": 2.0,  "peak_hours": [8, 9, 10, 14, 15, 16], "pop_density": 3000, "holiday_boost": 0.2},
 }
 
-# Hyderabad public holidays (approximate 2023-2024)
-HYDERABAD_HOLIDAYS = {
-    "2024-01-01", "2024-01-26", "2024-03-25", "2024-03-29",
-    "2024-04-14", "2024-04-17", "2024-04-21", "2024-05-23",
-    "2024-06-17", "2024-08-15", "2024-10-02", "2024-10-12",
-    "2024-10-13", "2024-10-14", "2024-11-01", "2024-11-15",
-    "2024-12-25",
-}
+from ml.preprocessing.calendar_features import HYDERABAD_HOLIDAYS
 
 # Monsoon months in Hyderabad: June–October (higher rainfall, affects bin usage)
 MONSOON_MONTHS = {6, 7, 8, 9, 10}

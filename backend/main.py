@@ -1586,34 +1586,6 @@ def optimize_routes(db: Session = Depends(get_db)):
 
     db.commit()
 
-    # Save comparison metrics
-    all_bins_objs = db.query(Bin).all()
-    all_bins = [{"bin_id": b.bin_id, "latitude": b.latitude, "longitude": b.longitude, "capacity": b.capacity} for b in all_bins_objs]
-    fixed_metrics = simulate_fixed_schedule(depot_coords, all_bins, truck_fleet)
-
-    comparison = {
-        "AI": {
-            "distance_km": results.get("total_distance_km", 0),
-            "fuel_liters": results.get("total_fuel_liters", 0),
-            "overflow_bins": 2,
-            "duration_hours": results.get("total_duration_hours", 0),
-            "truck_utilization_pct": results.get("truck_utilization_pct", 0),
-            "bins_collected": len(bins_to_collect)
-        },
-        "Fixed": {
-            "distance_km": fixed_metrics["total_distance_km"],
-            "fuel_liters": fixed_metrics["total_fuel_liters"],
-            "overflow_bins": 12,
-            "duration_hours": fixed_metrics["total_duration_hours"],
-            "truck_utilization_pct": fixed_metrics["truck_utilization_pct"],
-            "bins_collected": len(all_bins) // 3
-        }
-    }
-
-    metrics_file = os.path.join(os.path.dirname(__file__), "..", "database", "optimized_metrics.json")
-    with open(metrics_file, "w") as f:
-        json.dump(comparison, f, indent=4)
-
     return {
         "message": f"Optimized routes for {len(results.get('routes', {}))} trucks. {len(bins_to_collect)} bins scheduled.",
         "metrics": results
@@ -1654,17 +1626,38 @@ def get_routes(db: Session = Depends(get_db)):
 @app.get("/api/analytics", tags=["Analytics"])
 def get_analytics(db: Session = Depends(get_db)):
     """Returns system analytics: savings, ML metrics, bin stats, and area breakdown."""
-    metrics_file = os.path.join(os.path.dirname(__file__), "..", "database", "optimized_metrics.json")
-    comparison = {
-        "AI": {"distance_km": 94.2, "fuel_liters": 28.3, "overflow_bins": 2, "duration_hours": 5.1, "truck_utilization_pct": 82.5, "bins_collected": 42},
-        "Fixed": {"distance_km": 142.8, "fuel_liters": 42.8, "overflow_bins": 11, "duration_hours": 7.4, "truck_utilization_pct": 42.1, "bins_collected": 33}
-    }
-    if os.path.exists(metrics_file):
+    # Try to load experiment results for comparison
+    exp_file = os.path.join(os.path.dirname(__file__), "..", "experiments", "results", "aggregate_results.csv")
+    comparison = {}
+    if os.path.exists(exp_file):
         try:
-            with open(metrics_file, "r") as f:
-                comparison = json.load(f)
-        except Exception:
-            pass
+            df_agg = pd.read_csv(exp_file, index_col=0) # index is Strategy
+            if "Full EcoBin" in df_agg.index and "Fixed" in df_agg.index:
+                comparison = {
+                    "AI": {
+                        "distance_km": float(df_agg.loc["Full EcoBin", "Distance_km_mean"]),
+                        "fuel_liters": float(df_agg.loc["Full EcoBin", "Fuel_Liters_mean"]),
+                        "overflow_bins": float(df_agg.loc["Full EcoBin", "Overflow_Events_mean"]),
+                        "truck_utilization_pct": float(df_agg.loc["Full EcoBin", "Utilization_pct_mean"]),
+                        "duration_hours": round(float(df_agg.loc["Full EcoBin", "Distance_km_mean"]) / 30.0, 1)
+                    },
+                    "Fixed": {
+                        "distance_km": float(df_agg.loc["Fixed", "Distance_km_mean"]),
+                        "fuel_liters": float(df_agg.loc["Fixed", "Fuel_Liters_mean"]),
+                        "overflow_bins": float(df_agg.loc["Fixed", "Overflow_Events_mean"]),
+                        "truck_utilization_pct": float(df_agg.loc["Fixed", "Utilization_pct_mean"]),
+                        "duration_hours": round(float(df_agg.loc["Fixed", "Distance_km_mean"]) / 30.0, 1)
+                    }
+                }
+        except Exception as e:
+            print(f"Error loading experiment results: {e}")
+
+    # Fallback to zero if not run yet
+    if not comparison:
+        comparison = {
+            "AI": {"distance_km": 0, "fuel_liters": 0, "overflow_bins": 0, "duration_hours": 0, "truck_utilization_pct": 0, "bins_collected": 0},
+            "Fixed": {"distance_km": 0, "fuel_liters": 0, "overflow_bins": 0, "duration_hours": 0, "truck_utilization_pct": 0, "bins_collected": 0}
+        }
 
     distance_saved = max(0.0, comparison["Fixed"]["distance_km"] - comparison["AI"]["distance_km"])
     fuel_saved = max(0.0, comparison["Fixed"]["fuel_liters"] - comparison["AI"]["fuel_liters"])

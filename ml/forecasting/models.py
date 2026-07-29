@@ -39,6 +39,19 @@ def calculate_mape(y_true, y_pred):
         return 0.0
     return np.mean(np.abs((y_true[mask] - y_pred[mask]) / y_true[mask])) * 100
 
+def get_classification_metrics(y_true, y_pred, threshold=80.0):
+    from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix
+    y_true_binary = (y_true >= threshold).astype(int)
+    y_pred_binary = (y_pred >= threshold).astype(int)
+    tn, fp, fn, tp = confusion_matrix(y_true_binary, y_pred_binary, labels=[0, 1]).ravel()
+    return {
+        'Precision': float(precision_score(y_true_binary, y_pred_binary, zero_division=0)),
+        'Recall': float(recall_score(y_true_binary, y_pred_binary, zero_division=0)),
+        'F1': float(f1_score(y_true_binary, y_pred_binary, zero_division=0)),
+        'FP': int(fp),
+        'FN': int(fn)
+    }
+
 def cdf_normal(x, mu, sigma):
     """Calculates the cumulative distribution function of a normal distribution."""
     if sigma <= 0:
@@ -52,7 +65,11 @@ def calculate_overflow_probability(predicted_fill, rmse, threshold=80.0):
     return float(np.clip(prob, 0.0, 1.0))
 
 def train_and_evaluate_models():
-    """Trains and compares forecasting models, saving the best one."""
+    """
+    Trains and compares forecasting models.
+    Persist the proposed EcoBin forecasting model (XGBoost).
+    Persistence and Ridge Regression are evaluation baselines.
+    """
     raw_df = get_historical_dataframe()
     
     print("Building features...")
@@ -98,11 +115,13 @@ def train_and_evaluate_models():
     rmse_base = np.sqrt(mean_squared_error(y_test, y_test_baseline))
     mape_base = calculate_mape(y_test, y_test_baseline)
     r2_base = r2_score(y_test, y_test_baseline)
+    class_metrics_base = get_classification_metrics(y_test, y_test_baseline)
     results['Baseline (Persistence)'] = {
         'MAE': float(mae_base),
         'RMSE': float(rmse_base),
         'MAPE': float(mape_base),
-        'R2': float(r2_base)
+        'R2': float(r2_base),
+        **class_metrics_base
     }
     
     # 2. Linear Regression (Ridge)
@@ -115,11 +134,13 @@ def train_and_evaluate_models():
     rmse_ridge = np.sqrt(mean_squared_error(y_test, y_pred_ridge))
     mape_ridge = calculate_mape(y_test, y_pred_ridge)
     r2_ridge = r2_score(y_test, y_pred_ridge)
+    class_metrics_ridge = get_classification_metrics(y_test, y_pred_ridge)
     results['Ridge Regression'] = {
         'MAE': float(mae_ridge),
         'RMSE': float(rmse_ridge),
         'MAPE': float(mape_ridge),
-        'R2': float(r2_ridge)
+        'R2': float(r2_ridge),
+        **class_metrics_ridge
     }
     
     # 3. XGBoost Regressor
@@ -140,11 +161,13 @@ def train_and_evaluate_models():
     rmse_xgb = np.sqrt(mean_squared_error(y_test, y_pred_xgb))
     mape_xgb = calculate_mape(y_test, y_pred_xgb)
     r2_xgb = r2_score(y_test, y_pred_xgb)
+    class_metrics_xgb = get_classification_metrics(y_test, y_pred_xgb)
     results['XGBoost Regressor'] = {
         'MAE': float(mae_xgb),
         'RMSE': float(rmse_xgb),
         'MAPE': float(mape_xgb),
-        'R2': float(r2_xgb)
+        'R2': float(r2_xgb),
+        **class_metrics_xgb
     }
     
     print("\n--- Model Comparison ---")
@@ -165,7 +188,7 @@ def train_and_evaluate_models():
     with open(os.path.join(MODEL_DIR, "model_metadata.json"), "w") as f:
         json.dump(metadata, f, indent=4)
         
-    print(f"Saved best model and metadata to {MODEL_DIR}")
+    print(f"Saved proposed XGBoost model and metadata to {MODEL_DIR}")
     return results
 
 if __name__ == "__main__":

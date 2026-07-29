@@ -221,33 +221,30 @@ def solve_cvrp(depot_coords, bins_to_collect, truck_fleet):
             
     return results
 
-def simulate_fixed_schedule(depot_coords, all_bins, truck_fleet):
+def simulate_fixed_schedule(depot_coords, all_bins, truck_fleet, day_index=0):
     """
-    Simulates a traditional schedule: collects 1/3 of all bins every single day (approx 167 bins)
-    regardless of fill levels. This is a typical rotation scheme.
+    Simulates a traditional schedule: collects 1/3 of all bins every single day
+    using a deterministic rotation scheme.
     """
-    # Select a pseudo-random subset representing today's rotation
-    np.random.seed(42)
-    num_to_collect = len(all_bins) // 3
-    selected_indices = np.random.choice(range(len(all_bins)), size=num_to_collect, replace=False)
     bins_to_collect = []
     
-    for idx in selected_indices:
-        b = all_bins[idx]
-        # Simulate fill level: average is 50%
-        bins_to_collect.append({
-            "bin_id": b["bin_id"],
-            "latitude": b["latitude"],
-            "longitude": b["longitude"],
-            # Since it's collected on schedule, the average load collected is around 45% of capacity
-            "current_fill_liters": b["capacity"] * 0.45 
-        })
-        
+    # Sort bins for deterministic behavior
+    all_bins_sorted = sorted(all_bins, key=lambda x: x["bin_id"])
+    
+    for i, b in enumerate(all_bins_sorted):
+        # Deterministic 3-day rotation
+        if (i % 3) == (day_index % 3):
+            # Use actual current_fill_liters if provided, else fallback to 45% capacity
+            current_fill = b.get("current_fill_liters", b["capacity"] * 0.45)
+            bins_to_collect.append({
+                "bin_id": b["bin_id"],
+                "latitude": b["latitude"],
+                "longitude": b["longitude"],
+                "capacity": b["capacity"],
+                "current_fill_liters": current_fill
+            })
+            
     # Solve routing for these bins
     metrics = solve_cvrp(depot_coords, bins_to_collect, truck_fleet)
     
-    # Scale back to represent typical daily metrics
-    # In fixed routing, because we collect random bins, truck utilization is much lower.
-    # We will adjust truck utilization down to reflect empty-bin collection inefficiency
-    metrics["truck_utilization_pct"] = round(metrics["truck_utilization_pct"] * 0.65, 1) # e.g. 40-50%
     return metrics
